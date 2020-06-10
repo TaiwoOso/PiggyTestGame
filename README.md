@@ -5,7 +5,9 @@ Created a functioning game based on a popular Roblox game called "Piggy". In thi
 ### Game Walk-though
 
 - [x] Created a crouch animation using roblox studio and implemented code that slows down the user when that animation is enabled.
+
 <img src="https://media.giphy.com/media/lPFgpFrk3YJkFvkn21/giphy.gif" width=200><br>
+
 - [x] When fired at the intended player, "Piggy", implements code that prevents the player from moving for a duration of time.
 <img src="YOUR_GIF_URL_HERE" width=200><br>
 - [x] When activated, places a trap that prevents other players from moving when stepped on.
