@@ -34,7 +34,7 @@ Created a functioning game based on a popular Roblox game called "Piggy". In thi
   
 - [x] Used to deactivate traps and activate the final door.
 
-  <img src="https://giphy.com/gifs/gHQwgWz1iH3sQXkV5Z/html5" width=200><br>
+  <img src="https://media.giphy.com/media/gHQwgWz1iH3sQXkV5Z/giphy.gif" width=200><br>
   
 - [x] When planks have been destroyed and the final door has been activated, used to destroy the final door and end the game.
 
