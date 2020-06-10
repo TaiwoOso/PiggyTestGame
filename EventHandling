@@ -1,0 +1,83 @@
+local keyModule = require(script.Parent:WaitForChild("Game Logic").KeyModule)
+
+local roundModule = require(script.Parent:WaitForChild("Game Logic").RoundModule)
+
+game.Players.PlayerAdded:Connect(function(player)
+
+	
+	-- Insert a value tag inside the player so we can tell where they are in the menu or not. This way we can tell which players are
+	-- active and ready to play, and prevents AFK players from joining a round when it starts, as they are still in the Menu GUI.
+	local inMenu = Instance.new("BoolValue")
+	inMenu.Name = "InMenu"
+	inMenu.Parent = player
+	
+	player.CharacterAdded:Connect(function(char)
+		char.Humanoid.Died:Connect(function()
+			
+			
+			if char:FindFirstChild("HumanoidRootPart") then
+				keyModule.DroppedTools(player,game.Workspace.Map,char.HumanoidRootPart.Position)
+				print("Tools Dropped")
+				game.ReplicatedStorage.ToggleCrouch:FireClient(player, false)
+				
+			end
+			
+			
+			if player:FindFirstChild("Contestant") then
+				player.Contestant:Destroy()
+			elseif player:FindFirstChild("Piggy") then
+				player.Piggy:Destroy()
+			end
+		end)
+		
+	end)
+	
+end)
+
+local trapDebounce = false
+
+game.ReplicatedStorage.PlaceTrap.OnServerEvent:Connect(function(player)
+	if player:FindFirstChild("Piggy") then
+		if player:FindFirstChild("TrapCount") then
+			if not trapDebounce then
+				trapDebounce = true
+				
+				if player.TrapCount.Value > 0 then
+					if game.Workspace:FindFirstChild("Map") then
+						player.TrapCount.Value = player.TrapCount.Value - 1
+						print(player.TrapCount.Value)
+						
+						local trap = game.ServerStorage.Bear_Trap:Clone()
+						
+						trap.CFrame = player.Character.HumanoidRootPart.CFrame - Vector3.new(0,3.5,0)
+						trap.Parent = game.Workspace:FindFirstChild("Map")
+						
+					end
+				end
+				
+				wait(5)
+				trapDebounce = false
+			end
+		end
+	end
+end)
+
+game.ReplicatedStorage.MenuPlay.OnServerEvent:Connect(function(player)
+	if player:FindFirstChild("InMenu") then
+		--Remove the inMenu tag so that you can be counted as an active player
+		player.InMenu:Destroy()
+	end
+	
+	if game.ServerStorage.GameValues.GameInProgress.Value == true then
+		local contestant = Instance.new("BoolValue")
+		contestant.Name = "Contestant"
+		contestant.Parent = player
+		
+		game.ReplicatedStorage.ToggleCrouch:FireClient(player, true)
+		
+		roundModule.TeleportPlayers({player},game.Workspace:FindFirstChild("Map").PlayerSpawns:GetChildren())
+		
+	end
+	
+	
+end)
