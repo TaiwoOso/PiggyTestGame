@@ -1,0 +1,69 @@
+local module = {}
+
+function module.DroppedTools(plr,map,position)
+	-- Look for any tools that are in your backpack
+	for i, tool in pairs(plr.Backpack:GetChildren()) do
+		if tool:IsA("Tool") and game.ServerStorage.KeyHandles:FindFirstChild(tool.Name) then
+			local clone = game.ServerStorage.KeyHandles:FindFirstChild(tool.Name):Clone()
+			
+			if clone:IsA("Model") then
+				clone:SetPrimaryPartCFrame(CFrame.new(position))
+			else
+				clone.Position = position
+			end
+			
+			clone.Parent = map.Items
+			
+			tool:Destroy()
+		end
+	end
+	
+	-- Look for any tools that are in your character
+	for i, tool in pairs(plr.Character:GetChildren()) do
+		if tool:IsA("Tool") and game.ServerStorage.KeyHandles:FindFirstChild(tool.Name) then
+			local clone = game.ServerStorage.KeyHandles:FindFirstChild(tool.Name):Clone()
+			
+			if clone:IsA("Model") then
+				clone:SetPrimaryPartCFrame(CFrame.new(position))
+			else
+				clone.Position = position
+			end
+			
+			clone.Parent = map.Items
+			
+			tool:Destroy()
+		end
+	end
+end
+
+function module.Clicked(plr,item)
+	if plr then
+		if plr.Character and not plr:FindFirstChild("Piggy") then
+			local position
+	
+			if item:IsA("Model") then
+				position = item.PrimaryPart.Position
+			else
+				position = item.Position
+			end
+			
+			module.DroppedTools(plr,game.Workspace.Map,position)
+			print("Dropped Keyhandles")
+			
+			if game.ServerStorage.Tools:FindFirstChild(item.Name) then
+				local clonedTool = game.ServerStorage.Tools[item.Name]:Clone()
+				clonedTool.Parent = plr.Backpack
+				
+				plr.Character.Humanoid:EquipTool(clonedTool)
+				
+				item:Destroy()
+				
+				print("Equipped the tool object")
+			end
+			
+		end
+	end
+	
+end
+
+return module
