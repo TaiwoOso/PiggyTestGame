@@ -1,0 +1,221 @@
+local module = {}
+
+local status = game.ReplicatedStorage:WaitForChild("Status")
+
+function module.Intermission(length)
+	for i = length,0,-1 do
+		status.Value = "Next round starts in "..i.." seconds"
+		wait(1)
+	end
+end
+
+function module.SelectChapter()
+	local rand = Random.new()
+	local chapters = game.ReplicatedStorage.Chapters:GetChildren()
+	local chosenChapter = chapters[rand:NextInteger(1,#chapters)]
+	
+	return chosenChapter
+end
+
+function module.ChoosePiggy(players)
+	local RandomObj = Random.new()
+	local chosenPiggy = players[RandomObj:NextInteger(1,#players)]
+	
+	return chosenPiggy
+end
+
+function module.DressPiggy(piggy)
+	local character = game.ServerStorage.Piggy:Clone()
+	character.Name = piggy.Name
+	
+	piggy.Character = character
+	character.Parent = game.Workspace
+end
+
+function module.TeleportPiggy(player)
+	if player.Character then
+		
+		player.Character.Humanoid.WalkSpeed = 14
+		
+		local bat = game.ServerStorage.Tools.PiggyBat:Clone()
+		bat.Parent = player.Character
+		
+		if player.Character:FindFirstChild("HumanoidRootPart") then
+			player.Character.HumanoidRootPart.CFrame = game.Workspace.WaitingRoom.PiggyWaitingSpawn.CFrame + Vector3.new(0,5,0)
+		end
+		
+		local TrapCount = Instance.new("IntValue")
+		TrapCount.Name = "TrapCount"
+		TrapCount.Value = 5
+		TrapCount.Parent = player
+		
+		game.ReplicatedStorage.ToggleTrap:FireClient(player,true)
+		print("Trap for Piggy")
+	
+	end
+end
+
+function module.TeleportPlayers(players, mapSpawns)
+	-- players will be a Table containing all contestants
+	-- mapSpawns will be a Table containing all spawn points
+	
+	for i, player in pairs (players) do
+		if player.Character then
+			local character = player.Character
+			
+			if character:FindFirstChild("HumanoidRootPart") then
+				player.Character.Humanoid.WalkSpeed = 16
+				
+				local RandomObj = Random.new()
+				local chosenSpawn = mapSpawns[RandomObj:NextInteger(1,#mapSpawns)]
+				
+				player.Character.HumanoidRootPart.CFrame = chosenSpawn.CFrame + Vector3.new(0,10,0)
+				
+				
+				local hitboxClone = game.ServerStorage.Hitbox:Clone()
+				hitboxClone.CFrame = character.HumanoidRootPart.CFrame
+				hitboxClone.Parent = player.Character
+				
+				local weld = Instance.new("Weld")
+				weld.Part1 = character.HumanoidRootPart
+				weld.Part0 = hitboxClone
+				weld.Parent = character
+			end
+		end
+	end
+end
+
+function module.InsertTag(playerTable,tagName)
+	for i, player in pairs(playerTable) do 
+		local Tag = Instance.new("StringValue")
+		Tag.Name = tagName
+		Tag.Parent = player
+	end
+	
+end
+
+local function toMS(s)
+	return ("%02i:%02i"):format(s/60%60, s%60)
+end
+
+function module.StartRound(length,piggy,chapterMap) -- length (in seconds)
+	
+	game.ServerStorage.GameValues.GameInProgress.Value = true
+	
+	local outcome
+	
+	for i = length,0,-1 do
+		
+		if i == (length - 20) then
+			module.TeleportPlayers({piggy},chapterMap.PlayerSpawns:GetChildren())
+			status.Value = "Piggy has woken up!"
+			wait(2)
+		end
+		
+		local contestants = {}
+		
+		local isPiggyHere = false
+		
+		local Escapees = 0
+		
+		for i, player in pairs(game.Players:GetPlayers()) do
+			if player:FindFirstChild("Contestant") then
+				table.insert(contestants,player)
+			elseif player:FindFirstChild("Piggy") then
+				isPiggyHere = true
+			end
+			
+			if player:FindFirstChild("Escaped") then
+				Escapees = Escapees + 1
+			end
+		end
+		
+		status.Value = toMS(i)
+		
+		if Escapees > 0 then
+			outcome = "Escaped"
+			break
+		end
+		
+		if not isPiggyHere then -- if Piggy left the game or died
+			outcome = "Piggy has died! Contestants win!"
+			break
+		end
+		
+		if #contestants == 0 then
+			outcome = "Piggy has killed everyone!"
+			break
+		end
+		
+		if i == 0 then
+			outcome = "Time up! Contestants win!"
+			break
+		end
+		
+		
+		wait(1)
+	end
+	
+	if outcome == "Piggy has died! Contestants win!" then
+		status.Value = outcome
+	elseif outcome == "Piggy has killed everyone!" then
+		status.Value = outcome
+	elseif outcome == "Time up! Contestants win!" then
+		status.Value = outcome	
+	elseif outcome == "Escaped" then
+		status.Value = "Contestants have escaped! Piggy loses!"
+	end
+	
+	wait(5)
+		
+		
+	
+end
+
+function module.RemoveTags()
+	
+	game.ServerStorage.GameValues.GameInProgress.Value = false
+	
+	game.ReplicatedStorage.ToggleCrouch:FireAllClients(false)
+	
+	for i, v in pairs(game.Players:GetPlayers()) do
+		if v:FindFirstChild("Piggy") then
+			v.Piggy:Destroy()
+			
+			if v.Backpack:FindFirstChild("PiggyBat") then v.Backpack.PiggyBat:Destroy() end
+			if v.Character:FindFirstChild("PiggyBat") then v.Character.PiggyBat:Destroy() end
+			
+			if v:FindFirstChild("TrapCount") then
+				v.TrapCount:Destroy()
+			end
+			
+			game.ReplicatedStorage.ToggleTrap:FireClient(v, false)
+			
+			v:LoadCharacter()
+			
+		elseif v:FindFirstChild("Contestant") then
+			v.Contestant:Destroy()
+			
+			for _, p in pairs(v.Backpack:GetChildren())do
+				if p:IsA("Tool") then
+					p:Destroy()
+				end
+			end
+			
+			for _, p in pairs(v.Character:GetChildren())do
+				if p:IsA("Tool") then
+					p:Destroy()
+				end
+			end
+		
+		if v:FindFirstChild("Escaped") then
+			v.Escaped:Destroy()
+		end
+			
+		end
+	end
+	
+	
+end
+	
+return module
