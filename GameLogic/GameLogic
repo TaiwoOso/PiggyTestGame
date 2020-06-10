@@ -1,0 +1,101 @@
+local Round = require(script.RoundModule)
+
+local Door = require(script.DoorModule)
+
+local Status = game.ReplicatedStorage:WaitForChild("Status")
+
+while wait() do
+	
+	repeat
+		
+		local availablePlayers = {}
+		
+		for i, plr in pairs(game.Players:GetPlayers())do
+			if not plr:FindFirstChild("InMenu") then
+				table.insert(availablePlayers,plr)
+			end
+			
+		end
+		
+		Status.Value = "2 'Ready' players Needed ("..#availablePlayers.."/2)"
+			
+		wait(2)
+		
+	until #availablePlayers >= 2
+	
+	Round.Intermission(5)
+	
+	local chosenChapter = Round.SelectChapter() -- Map currently in the chapters folder
+	
+	local clonedChapter = chosenChapter:Clone()
+	clonedChapter.Name = "Map"
+	clonedChapter.Parent = game.Workspace
+	
+	wait(2)
+	
+	if clonedChapter:FindFirstChild("Doors") then
+		Door.ActivateDoors(clonedChapter.Doors)
+	else
+		warn("Fatal error: You forgot to add the Doors folder to your map")
+	end
+	
+	
+	local contestants = {}
+	
+	for i, v in pairs(game.Players:GetPlayers()) do -- Puts non-AFK players into table
+		if not v:FindFirstChild("InMenu") then
+			table.insert(contestants, v)
+		end
+		
+	end
+	
+	
+	local chosenPiggy = Round.ChoosePiggy(contestants)
+	
+	for i, v in pairs(contestants) do
+		--print(i)
+		if v == chosenPiggy then
+			table.remove(contestants,i)
+		end
+	end
+	
+	for i, v in pairs(contestants) do	
+		game.ReplicatedStorage.ToggleCrouch:FireClient(v, true)
+	end
+	wait(1)
+	
+	Round.DressPiggy(chosenPiggy)
+	
+	Round.TeleportPiggy(chosenPiggy)
+	
+	if clonedChapter:FindFirstChild("PlayerSpawns") then
+		Round.TeleportPlayers(contestants, clonedChapter.PlayerSpawns:GetChildren())
+	else
+		warn("Fatal Error: You didn't add a PlayerSpawns folder into your Map")
+	end
+	
+	Round.InsertTag(contestants,"Contestant")
+	Round.InsertTag({chosenPiggy},"Piggy")
+	
+	Round.StartRound(600,chosenPiggy,clonedChapter)
+	
+	contestants = {}
+	
+	for i, v in pairs(game.Players:GetPlayers()) do -- Puts non-AFK players into table
+		if not v:FindFirstChild("InMenu") then
+			table.insert(contestants, v)
+		end
+	end
+	
+	if game.Workspace.Lobby:FindFirstChild("Spawns") then
+		Round.TeleportPlayers(contestants, game.Workspace.Lobby.Spawns:GetChildren())
+	else
+		warn("Fatal Error: You have not added a Spawns folder into your Lobby")
+	end
+	
+	clonedChapter:Destroy()
+	
+	Round.RemoveTags()
+	
+	wait(2)
+end
